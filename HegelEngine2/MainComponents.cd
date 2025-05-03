@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="HegelEngine2.CellularAutomaton">
+    <Position X="5.75" Y="2.5" Width="3.25" />
+    <Members>
+      <Method Name="ChangeState" Hidden="true" />
+      <Method Name="CheckCrosses" Hidden="true" />
+      <Method Name="CreateEmptyField" Hidden="true" />
+      <Method Name="GetCell" Hidden="true" />
+      <Method Name="GetStatesNumbers" Hidden="true" />
+      <Method Name="Is3D" Hidden="true" />
+      <Method Name="IsCrossedBoundaries" Hidden="true" />
+      <Method Name="MooreGenerate" Hidden="true" />
+      <Method Name="NeimanGenerate" Hidden="true" />
+      <Method Name="ProcessBorder" Hidden="true" />
+      <Method Name="ProcessField" Hidden="true" />
+      <Method Name="RemoveOZCoords" Hidden="true" />
+    </Members>
+    <NestedTypes>
+      <Delegate Name="HegelEngine2.CellularAutomaton.ProcessCell" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>CellularAutomaton.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Delegate>
+      <Enum Name="HegelEngine2.CellularAutomaton.Boundary" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>CellularAutomaton.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="HegelEngine2.CellularAutomaton.BoundaryConditions" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>CellularAutomaton.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="HegelEngine2.CellularAutomaton.NeighborType" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>CellularAutomaton.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="HegelEngine2.CellularAutomaton.CellState" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>CellularAutomaton.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+      <Enum Name="HegelEngine2.CellularAutomaton.AutomatonState" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>CellularAutomaton.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>QA4AEIIAEAAgBcAAAUUAAQAAEAAAgAAARAACBACEAAA=</HashCode>
+      <FileName>CellularAutomaton.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_outputParameters" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="HegelEngine2.ModelView">
+    <Position X="10" Y="0.5" Width="2.25" />
+    <Members>
+      <Property Name="ChangedCells" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAhAAAAAAAAAAQEAAAAAgAAQAgAAAQABAAABAAAAAA=</HashCode>
+      <FileName>ModelView.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="FieldAG" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="HegelEngine2.Cell">
+    <Position X="13.25" Y="3.25" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAABUAAAAAAAAAACAAAAAAAgABAAAAAA=</HashCode>
+      <FileName>Cell.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
