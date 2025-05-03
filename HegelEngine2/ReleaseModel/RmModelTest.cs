@@ -84,7 +84,7 @@ public class RmModelTest : CellularAutomaton
         if (searchingCandidates.Count == 0)
             return;
 
-        if ((tmpMass - totalDiffusion) <= 0)
+        if (tmpMass <= 0) //(currentMass - totalDiffusion) <= 0
         {
             float distributedMass = 0f;
 
