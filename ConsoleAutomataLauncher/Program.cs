@@ -51,12 +51,6 @@ internal class Program
         string inputPath = "output.txt";
         string outputPath = "output.csv";
 
-        if (!File.Exists(inputPath))
-        {
-            File.Create(inputPath).Dispose();
-            Console.WriteLine("Файл output.txt не найден. Создан пустой файл.");
-        }
-
         string[] lines = File.ReadAllLines(inputPath);
 
         using (var writer = new StreamWriter(outputPath, false, new System.Text.UTF8Encoding(true)))
