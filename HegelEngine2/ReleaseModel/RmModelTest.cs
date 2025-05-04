@@ -192,6 +192,8 @@ public class RmModelTest : CellularAutomaton
 
         (_outputParameters as RmModelView).SolidCells = _solidCells;
 
+        _releasedMass = 0;
+
         base.Update();
     }
 
