@@ -14,10 +14,16 @@ public class RmModelTest : CellularAutomaton
     private readonly float _k;
     private readonly float _d;
 
+    private RmViewModel _inputParams;
+    private RmModelView _outputView;
+
     private Dictionary<int, float> _iterMass = new Dictionary<int, float>();
 
     public RmModelTest(ModelView output, ViewModel input) : base(output, input)
     {
+        _inputParams = (RmViewModel)input;
+        _outputView = (RmModelView)output;
+
         _statesNumbers.Add("solution", 0);
 
         _liquidMass = (_inputParameters as RmViewModel).LiquidMass;
@@ -28,28 +34,42 @@ public class RmModelTest : CellularAutomaton
     public override void CreateInitialConfiguration()
     {
         _releasedMass = 0;
-
-        var d = (_inputParameters as RmViewModel).Diameter;
-
-        var size = (_inputParameters as RmViewModel).Size.X;
-
-        var weight = (_inputParameters as RmViewModel).SolidMass;
-
-        float x0 = (float)Math.Floor((float)size / 2.0);
-        float y0 = (float)Math.Floor((float)size / 2.0);
-        float r = (float)Math.Floor(d / 2.0);
+        var size = _inputParams.Size.X;
+        var center = new VectorInt(size / 2, size / 2, 0);
+        var radius = _inputParams.Diameter / 2;
+        var weight = _inputParams.SolidMass;
 
         ProcessField((x, y, z) =>
         {
-            if ((Math.Pow(x - x0, 2) + Math.Pow(y - y0, 2)) <= r * r)
-            {
-                _outputParameters.FieldAG[x, y, z].State = weight;
-            }
-            else
-            {
-                _outputParameters.FieldAG[x, y, z].State = StatesNumbers["solution"];
-            }
+            var distanceSq = ((x - center.X) * (x - center.X)) +
+                             ((y - center.Y) * (y - center.Y));
+            _outputParameters.FieldAG[x, y, z].State =
+                distanceSq <= radius * radius ? weight : StatesNumbers["solution"];
         });
+
+        //_releasedMass = 0;
+
+        //var d = (_inputParameters as RmViewModel).Diameter;
+
+        //var size = (_inputParameters as RmViewModel).Size.X;
+
+        //var weight = (_inputParameters as RmViewModel).SolidMass;
+
+        //float x0 = (float)Math.Floor((float)size / 2.0);
+        //float y0 = (float)Math.Floor((float)size / 2.0);
+        //float r = (float)Math.Floor(d / 2.0);
+
+        //ProcessField((x, y, z) =>
+        //{
+        //    if ((Math.Pow(x - x0, 2) + Math.Pow(y - y0, 2)) <= r * r)
+        //    {
+        //        _outputParameters.FieldAG[x, y, z].State = weight;
+        //    }
+        //    else
+        //    {
+        //        _outputParameters.FieldAG[x, y, z].State = StatesNumbers["solution"];
+        //    }
+        //});
     }
 
     private List<(VectorInt pos, float potentialDiff)> searchingCandidates 
@@ -60,6 +80,8 @@ public class RmModelTest : CellularAutomaton
         float currentMass = GetCell(x, y, z).State;
 
         float totalDiffusion = 0f;
+
+        searchingCandidates.Clear();
 
         foreach (var n in _neighbors)
         {
@@ -104,8 +126,6 @@ public class RmModelTest : CellularAutomaton
                 _bufferField[pos.X, pos.Y, pos.Z] += diff;
             }
         }
-
-        searchingCandidates.Clear();
     }
 
     public void Dilute(int x, int y, int z)
