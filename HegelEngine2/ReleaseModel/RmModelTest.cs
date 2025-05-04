@@ -35,12 +35,12 @@ public class RmModelTest : CellularAutomaton
 
         var weight = (_inputParameters as RmViewModel).SolidMass;
 
+        float x0 = (float)Math.Floor((float)size / 2.0);
+        float y0 = (float)Math.Floor((float)size / 2.0);
+        float r = (float)Math.Floor(d / 2.0);
+
         ProcessField((x, y, z) =>
         {
-            float x0 = (float)Math.Floor((float)size / 2.0);
-            float y0 = (float)Math.Floor((float)size / 2.0);
-            float r = (float)Math.Floor(d / 2.0);
-
             if ((Math.Pow(x - x0, 2) + Math.Pow(y - y0, 2)) <= r * r)
             {
                 _outputParameters.FieldAG[x, y, z].State = weight;
@@ -59,8 +59,6 @@ public class RmModelTest : CellularAutomaton
     {
         float currentMass = GetCell(x, y, z).State;
 
-        float tmpMass = currentMass;
-
         float totalDiffusion = 0f;
 
         foreach (var n in _neighbors)
@@ -74,8 +72,6 @@ public class RmModelTest : CellularAutomaton
             {
                 float diff = _d * (currentMass - nextMass);
 
-                tmpMass -= diff;
-
                 searchingCandidates.Add((checkPos, diff));
                 totalDiffusion += diff;
             }
@@ -84,7 +80,7 @@ public class RmModelTest : CellularAutomaton
         if (searchingCandidates.Count == 0)
             return;
 
-        if (tmpMass <= 0) //(currentMass - totalDiffusion) <= 0
+        if ((currentMass - totalDiffusion) <= 0)
         {
             float distributedMass = 0f;
 
@@ -136,13 +132,15 @@ public class RmModelTest : CellularAutomaton
 
     public void ChoiceMethod(int x, int y, int z)
     {
-        if (GetCell(x, y, z).State >= _liquidMass)
+        float state = GetCell(x, y, z).State;
+
+        if (state > _liquidMass)
         {
             Dilute(x, y, z);
         }
         else
         {
-            _releasedMass += GetCell(x, y, z).State;
+            _releasedMass += state;
             Diffuse(x, y, z);
         }
     }
@@ -153,10 +151,21 @@ public class RmModelTest : CellularAutomaton
     {
         if (_outputParameters.IsFinished)
         {
-            var lines = _iterMass.Select(kvp => $"{kvp.Key}: {kvp.Value}");
-            File.WriteAllLines("output.txt", lines);
+            using var writer = new StreamWriter("output.txt");
+            writer.WriteLine("Индекс;Значение");
+            foreach (var kvp in _iterMass.OrderBy(k => k.Key))
+            {
+                writer.WriteLine($"{kvp.Key}: {kvp.Value.ToString().Replace('.', ',')}");
+            }
             return;
         }
+
+        //if (_outputParameters.IsFinished)
+        //{
+        //    var lines = _iterMass.Select(kvp => $"{kvp.Key}: {kvp.Value}");
+        //    File.WriteAllLines("output.txt", lines);
+        //    return;
+        //}
 
         _bufferField = new float[_inputParameters.Size.X, 
                 _inputParameters.Size.Y, _inputParameters.Size.Z];
@@ -178,7 +187,8 @@ public class RmModelTest : CellularAutomaton
             }
         });
 
-        _iterMass.Add(_outputParameters.Iteration, _releasedMass);
+        //_iterMass.Add(_outputParameters.Iteration, _releasedMass);
+        _iterMass[_outputParameters.Iteration] = _releasedMass;
 
         (_outputParameters as RmModelView).SolidCells = _solidCells;
 
