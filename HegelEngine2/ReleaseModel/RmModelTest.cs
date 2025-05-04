@@ -79,6 +79,8 @@ public class RmModelTest : CellularAutomaton
     {
         float currentMass = GetCell(x, y, z).State;
 
+        float tmpMass = currentMass;
+
         float totalDiffusion = 0f;
 
         searchingCandidates.Clear();
@@ -92,7 +94,9 @@ public class RmModelTest : CellularAutomaton
                 nextMass <= _liquidMass &&
                 currentMass > nextMass)
             {
-                float diff = _d * (currentMass - nextMass);
+                float diff = _d * (tmpMass - nextMass);
+
+                tmpMass -= diff;
 
                 searchingCandidates.Add((checkPos, diff));
                 totalDiffusion += diff;
@@ -102,7 +106,7 @@ public class RmModelTest : CellularAutomaton
         if (searchingCandidates.Count == 0)
             return;
 
-        if ((currentMass - totalDiffusion) <= 0)
+        if (tmpMass <= 0)
         {
             float distributedMass = 0f;
 
