@@ -1,6 +1,7 @@
 ﻿using HegelEngine2.CellularAutomatonClass;
 using HegelEngine2.ParametersClasses;
 using HegelEngine2.Utils;
+using System.Text;
 
 namespace HegelEngine2.ReleaseModel;
 
@@ -15,14 +16,10 @@ public class RmModelTest : CellularAutomaton
     private readonly float _d;
 
     private RmViewModel _inputParams;
-    private RmModelView _outputView;
-
-    private Dictionary<int, float> _iterMass = new Dictionary<int, float>();
 
     public RmModelTest(ModelView output, ViewModel input) : base(output, input)
     {
         _inputParams = (RmViewModel)input;
-        _outputView = (RmModelView)output;
 
         _statesNumbers.Add("solution", 0);
 
@@ -46,39 +43,16 @@ public class RmModelTest : CellularAutomaton
             _outputParameters.FieldAG[x, y, z].State =
                 distanceSq <= radius * radius ? weight : StatesNumbers["solution"];
         });
-
-        //_releasedMass = 0;
-
-        //var d = (_inputParameters as RmViewModel).Diameter;
-
-        //var size = (_inputParameters as RmViewModel).Size.X;
-
-        //var weight = (_inputParameters as RmViewModel).SolidMass;
-
-        //float x0 = (float)Math.Floor((float)size / 2.0);
-        //float y0 = (float)Math.Floor((float)size / 2.0);
-        //float r = (float)Math.Floor(d / 2.0);
-
-        //ProcessField((x, y, z) =>
-        //{
-        //    if ((Math.Pow(x - x0, 2) + Math.Pow(y - y0, 2)) <= r * r)
-        //    {
-        //        _outputParameters.FieldAG[x, y, z].State = weight;
-        //    }
-        //    else
-        //    {
-        //        _outputParameters.FieldAG[x, y, z].State = StatesNumbers["solution"];
-        //    }
-        //});
     }
 
-    private List<(VectorInt pos, float potentialDiff)> searchingCandidates 
+    private List<(VectorInt pos, float potentialDiff)> searchingCandidates
                     = new List<(VectorInt pos, float potentialDiff)>();
 
     public void Diffuse(int x, int y, int z)
     {
         float currentMass = GetCell(x, y, z).State;
-
+        if (currentMass == 0)
+            return;
         float tmpMass = currentMass;
 
         float totalDiffusion = 0f;
@@ -102,7 +76,6 @@ public class RmModelTest : CellularAutomaton
                 totalDiffusion += diff;
             }
         }
-
         if (searchingCandidates.Count == 0)
             return;
 
@@ -120,7 +93,8 @@ public class RmModelTest : CellularAutomaton
                 distributedMass += actualTransfer;
             }
 
-            _bufferField[x, y, z] -= distributedMass;
+            _bufferField[x, y, z] = (_bufferField[x, y, z] - distributedMass < 0)
+                ? 0 : _bufferField[x, y, z] - distributedMass;
         }
         else
         {
@@ -169,50 +143,28 @@ public class RmModelTest : CellularAutomaton
         }
     }
 
-    private float _leaved = 0;
-
     public override void Update()
     {
         if (_outputParameters.IsFinished)
         {
-            using var writer = new StreamWriter("output.txt");
-            writer.WriteLine("Индекс;Значение");
-            foreach (var kvp in _iterMass.OrderBy(k => k.Key))
-            {
-                writer.WriteLine($"{kvp.Key}: {kvp.Value.ToString().Replace('.', ',')}");
-            }
+            (_outputParameters as RmModelView).IsEnd = true;
+
             return;
         }
 
-        //if (_outputParameters.IsFinished)
-        //{
-        //    var lines = _iterMass.Select(kvp => $"{kvp.Key}: {kvp.Value}");
-        //    File.WriteAllLines("output.txt", lines);
-        //    return;
-        //}
-
-        _bufferField = new float[_inputParameters.Size.X, 
+        _bufferField = new float[_inputParameters.Size.X,
                 _inputParameters.Size.Y, _inputParameters.Size.Z];
 
         _solidCells = 0;
 
-        _releasedMass = _leaved;
-
         ProcessField(ChoiceMethod);
 
-        ProcessField((x, y, z) => 
+        ProcessField((x, y, z) =>
         {
             GetCell(x, y, z).State += _bufferField[x, y, z];
-            if (x == 0 || y == 0 || x == _inputParameters.Size.X - 1 
-                                    || y == _inputParameters.Size.Y - 1)
-            {
-                _leaved += GetCell(x, y, z).State;
-                GetCell(x, y, z).State = 0;
-            }
         });
 
-        //_iterMass.Add(_outputParameters.Iteration, _releasedMass);
-        _iterMass[_outputParameters.Iteration] = _releasedMass;
+        (_outputParameters as RmModelView)._iterMass[_outputParameters.Iteration] = _releasedMass;
 
         (_outputParameters as RmModelView).SolidCells = _solidCells;
 

@@ -9,6 +9,10 @@ public class RmModelView : ModelView
 
     }
 
+    public bool IsEnd { get; set; }
+
+    public Dictionary<int, float> _iterMass = new Dictionary<int, float>();
+
     public float SolidCells { get; set; }
 
     public override string ToString()

@@ -1,6 +1,8 @@
 ﻿namespace _2DRender;
 
+using HegelEngine2;
 using HegelEngine2.CellularAutomatonClass;
+using HegelEngine2.ReleaseModel;
 using HegelEngine2.Utils;
 using Raylib_cs;
 
@@ -11,13 +13,16 @@ public class Render2D
     public int Scale { get; set; }
 
     // Порог для разделения на "твердые" и "жидкие" клетки
-    public float SolidThreshold { get; set; } = 0.5f;
+    private float SolidThreshold { get; init; }
 
-    public Render2D(Cell[,,] FieldAG, int scale)
+    public Render2D(Cell[,,] FieldAG, int scale, ViewModel vm)
     {
         Scale = scale;
         Width = FieldAG.GetLength((int)VectorInt.Dimension.X) * Scale;
         Height = FieldAG.GetLength((int)VectorInt.Dimension.Y) * Scale;
+
+        SolidThreshold = (vm as RmViewModel).LiquidMass;
+
         Raylib.InitWindow(Width, Height, "Test CARender2D");
         Raylib.SetTargetFPS(10);
     }
@@ -26,17 +31,17 @@ public class Render2D
     {
         if (state <= SolidThreshold)
         {
-            byte blue = (byte)(50 + (state / SolidThreshold) * 205);
-            return new Color((byte)0, (byte)0, blue, (byte)255);
+            byte blue = (byte)(255 - (state / SolidThreshold * 255));
+            byte red = (byte)((state / SolidThreshold) * 255);
+            return new Color((byte)red, (byte)0, blue, (byte)255);
         }
         else
         {
-            byte red = (byte)(50 + ((state - SolidThreshold) / (1f - SolidThreshold)) * 205);
-            return new Color(red, (byte)0, (byte)0, (byte)255);
+            return Color.Orange;
         }
     }
 
-    public void Draw(Cell[,,] FieldAG)
+    public void Draw(Cell[,,] FieldAG, int iter)
     {
         Raylib.BeginDrawing();
         Raylib.ClearBackground(Color.White);
@@ -48,33 +53,10 @@ public class Render2D
                 var c = CalculateColor(FieldAG[x, y, 0].State);
 
                 Raylib.DrawRectangle(x * Scale, y * Scale, Scale, Scale, c);
-
-                //        float red = 0f;
-                //        float blue = 0f;
-
-                //        if (FieldAG[x, y, 0].State < 12f)
-                //        {
-                //            blue = FieldAG[x, y, 0].State;
-                //        }
-                //        else 
-                //        {
-                //            red = FieldAG[x, y, 0].State;
-                //        }
-
-                //        Color c = new Color(
-                //            r: red,
-                //            g: 0,
-                //            b: blue,
-                //            a: 255
-                //        );
-
-                //        Raylib.DrawRectangle(x * Scale, y * Scale, Scale, Scale, c);
-                //    }
-                //}
             }
         }
 
-        Raylib.DrawText($"FPS: {Raylib.GetFPS()}", 10, 10, 20, Color.Black);
+        Raylib.DrawText($"FPS: {Raylib.GetFPS()}, Iteration: {iter}", 10, 10, 20, Color.Black);
         Raylib.EndDrawing();
     }
 }

@@ -4,6 +4,7 @@ using HegelEngine2.CellularAutomatonClass;
 using HegelEngine2.ParametersClasses;
 using HegelEngine2.ReleaseModel;
 using Raylib_cs;
+using System.Text;
 
 namespace ConsoleAutomataLauncher;
 
@@ -17,7 +18,7 @@ internal class Program
         vm.BoundaryConditions = CellularAutomaton.BoundaryConditions.Bounce;
         (vm as RmViewModel).Iterations = 100;
         (vm as RmViewModel).Name = ViewModel.AutomataName.ReleaseModel;
-        (vm as RmViewModel).Size = (300, 300, 1);
+        (vm as RmViewModel).Size = (150, 150, 1);
         (vm as RmViewModel).Diameter = 32f;
         (vm as RmViewModel).SolidMass = 23f;
         (vm as RmViewModel).LiquidMass = 12f;
@@ -27,48 +28,39 @@ internal class Program
         CellularAutomaton relModel = new RmModelTest(mv, vm);
         relModel.InitializeAutomata();
 
-        Render2D render = new Render2D(mv.FieldAG, 3);
+        Render2D render = new Render2D(mv.FieldAG, 6, vm);
 
         while (!Raylib.WindowShouldClose())
         {
-            if (File.Exists("output.txt"))
+            if ((mv as RmModelView).IsEnd)
             {
                 Thread.Sleep(3000);
+                Raylib.CloseWindow();
+                DataToExcel(mv);
                 break;
             }
 
             relModel.Update();
-            render.Draw(mv.FieldAG);
+            render.Draw(mv.FieldAG, mv.Iteration);
         }
-
-        Raylib.CloseWindow();
-
-        DataToExcel();
     }
 
-    private static void DataToExcel()
+    private static void DataToExcel(ModelView mv)
     {
-        string inputPath = "output.txt";
-        string outputPath = "output.csv";
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string csvFilePath = $"output_{timestamp}.csv";
 
-        string[] lines = File.ReadAllLines(inputPath);
-
-        using (var writer = new StreamWriter(outputPath, false, new System.Text.UTF8Encoding(true)))
+        using (var writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))
         {
             writer.WriteLine("№ итерации;Масса жидких");
 
-            foreach (var line in lines)
+            foreach (var kvp in (mv as RmModelView)._iterMass.OrderBy(k => k.Key))
             {
-                var parts = line.Split(':');
-                if (parts.Length != 2) continue;
-
-                string index = parts[0].Trim();
-                string value = parts[1].Trim().Replace(".", ",");
-
-                writer.WriteLine($"{index};{value}");
+                string formattedValue = kvp.Value.ToString().Replace('.', ',');
+                writer.WriteLine($"{kvp.Key};{formattedValue}");
             }
         }
 
-        Console.WriteLine($"CSV-файл сохранён: {Path.GetFullPath(outputPath)}");
+        Console.WriteLine($"CSV-файл сохранён: {Path.GetFullPath(csvFilePath)}");
     }
 }
