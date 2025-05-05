@@ -148,7 +148,6 @@ public class RmModelTest : CellularAutomaton
         if (_outputParameters.IsFinished)
         {
             (_outputParameters as RmModelView).IsEnd = true;
-
             return;
         }
 

@@ -16,7 +16,7 @@ internal class Program
 
         ViewModel vm = new RmViewModel();
         vm.BoundaryConditions = CellularAutomaton.BoundaryConditions.Bounce;
-        (vm as RmViewModel).Iterations = 100;
+        (vm as RmViewModel).Iterations = 5000;
         (vm as RmViewModel).Name = ViewModel.AutomataName.ReleaseModel;
         (vm as RmViewModel).Size = (150, 150, 1);
         (vm as RmViewModel).Diameter = 32f;
@@ -35,8 +35,8 @@ internal class Program
             if ((mv as RmModelView).IsEnd)
             {
                 Thread.Sleep(3000);
-                Raylib.CloseWindow();
                 DataToExcel(mv);
+                Raylib.CloseWindow();
                 break;
             }
 
@@ -47,7 +47,7 @@ internal class Program
 
     private static void DataToExcel(ModelView mv)
     {
-        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string timestamp = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss");
         string csvFilePath = $"output_{timestamp}.csv";
 
         using (var writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))
