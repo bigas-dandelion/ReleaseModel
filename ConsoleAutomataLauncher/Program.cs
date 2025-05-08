@@ -19,9 +19,13 @@ internal class Program
         (vm as RmViewModel).Iterations = 5000;
         (vm as RmViewModel).Name = ViewModel.AutomataName.ReleaseModel;
         (vm as RmViewModel).Size = (150, 150, 1);
+
         (vm as RmViewModel).Diameter = 32f;
         (vm as RmViewModel).SolidMass = 23f;
-        (vm as RmViewModel).LiquidMass = 12f;
+
+        (vm as RmViewModel).SaturatedConc = 32f;
+        (vm as RmViewModel).dx = 0.1f;
+        (vm as RmViewModel).dt = 0.1f;
         (vm as RmViewModel).D = 0.001f;
         (vm as RmViewModel).K = 0.0001f;
 

@@ -1,7 +1,6 @@
 ﻿using HegelEngine2.CellularAutomatonClass;
 using HegelEngine2.ParametersClasses;
 using HegelEngine2.Utils;
-using System.Text;
 
 namespace HegelEngine2.ReleaseModel;
 
@@ -11,9 +10,16 @@ public class RmModelTest : CellularAutomaton
 
     private float _solidCells = 0;
     private float _releasedMass = 0;
-    private readonly float _liquidMass;
+    private float _liquidMass;
+
     private readonly float _k;
-    private readonly float _d;
+    private float _D;
+    private readonly float _cSatur;
+    private readonly float _dt;
+    private readonly float _dx;
+
+    private float M_max;
+    //private float D_crit;
 
     private RmViewModel _inputParams;
 
@@ -23,13 +29,20 @@ public class RmModelTest : CellularAutomaton
 
         _statesNumbers.Add("solution", 0);
 
-        _liquidMass = (_inputParameters as RmViewModel).LiquidMass;
-        _k = (_inputParameters as RmViewModel).K;
-        _d = (_inputParameters as RmViewModel).D;
+        _cSatur = _inputParams.SaturatedConc;
+        _D = _inputParams.D;
+        _k = _inputParams.K;
+        _dt = _inputParams.dt;
+        _dx = _inputParams.dx;
     }
 
     public override void CreateInitialConfiguration()
     {
+        M_max = _cSatur * _dt * _dt * _dt;
+        _D = _D * _dt / (_dx * _dx); //D_crit
+
+        _liquidMass = (_inputParameters as RmViewModel).LiquidMass = M_max;
+
         _releasedMass = 0;
         var size = _inputParams.Size.X;
         var center = new VectorInt(size / 2, size / 2, 0);
@@ -68,7 +81,7 @@ public class RmModelTest : CellularAutomaton
                 nextMass <= _liquidMass &&
                 currentMass > nextMass)
             {
-                float diff = _d * (tmpMass - nextMass);
+                float diff = _D * (tmpMass - nextMass);
 
                 tmpMass -= diff;
 
