@@ -16,7 +16,7 @@ internal class Program
 
         ViewModel vm = new RmViewModel();
         vm.BoundaryConditions = CellularAutomaton.BoundaryConditions.Bounce;
-        (vm as RmViewModel).Iterations = 5000;
+        (vm as RmViewModel).Iterations = 100;
         (vm as RmViewModel).Name = ViewModel.AutomataName.ReleaseModel;
         (vm as RmViewModel).Size = (150, 150, 1);
 
