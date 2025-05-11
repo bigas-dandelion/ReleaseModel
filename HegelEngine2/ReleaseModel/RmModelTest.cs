@@ -19,7 +19,6 @@ public class RmModelTest : CellularAutomaton
     private readonly float _dx;
 
     private float M_max;
-    //private float D_crit;
 
     private RmViewModel _inputParams;
 
@@ -38,8 +37,8 @@ public class RmModelTest : CellularAutomaton
 
     public override void CreateInitialConfiguration()
     {
-        M_max = _cSatur * _dt * _dt * _dt;
-        _D = _D * _dt / (_dx * _dx); //D_crit
+        M_max = _cSatur * _dx * _dx * _dx;
+        _D = _D * _dt / (_dx * _dx);
 
         _liquidMass = (_inputParameters as RmViewModel).LiquidMass = M_max;
 
@@ -187,7 +186,6 @@ public class RmModelTest : CellularAutomaton
 
     public override bool IsFinished()
     {
-        return _outputParameters.Iteration >= (_inputParameters as RmViewModel).Iterations ||
-            (_outputParameters as RmModelView).SolidCells == 0;
+        return (_outputParameters as RmModelView).SolidCells == 0;
     }
 }
