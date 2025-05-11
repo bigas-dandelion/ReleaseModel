@@ -12,7 +12,7 @@ public class RmViewModel : ViewModel
 
     public float dx { get; set; }
 
-	public float Diameter { get; set; }
+    public float Diameter { get; set; }
 
     private float _solidMass;
 
