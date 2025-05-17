@@ -45,6 +45,8 @@ public class RmModelTest : CellularAutomaton
         _inputParams = (RmViewModel)input;
 
         _statesNumbers.Add("solution", 0);
+        _statesNumbers.Add("nonsoluble", -1);
+        _statesNumbers.Add("movable", -2);
 
         _size = _inputParams.Size.X;
 
@@ -52,9 +54,6 @@ public class RmModelTest : CellularAutomaton
 
         if (_porosity != 0)
         {
-            _statesNumbers.Add("nonsoluble", -1);
-            _statesNumbers.Add("movable", -2);
-
             _initialConfigurationAction = () => CreateBoneConfig();
         }
         else 
@@ -140,7 +139,7 @@ public class RmModelTest : CellularAutomaton
 
             if (nextMass != StatesNumbers["border"] &&
                 nextMass <= _liquidMass &&
-                currentMass > nextMass)
+                currentMass > nextMass && nextMass != StatesNumbers["nonsoluble"])
             {
                 float diff = _D * (tmpMass - nextMass);
 
@@ -193,7 +192,7 @@ public class RmModelTest : CellularAutomaton
 
             ProcessBorder(checkPos.X, checkPos.Y, checkPos.Z, out float nextState);
 
-            if (nextState < _liquidMass)
+            if (nextState < _liquidMass && nextState != StatesNumbers["nonsoluble"])
             {
                 float diffMass = _k * (_liquidMass - nextState);
                 _bufferField[x, y, z] -= diffMass;
@@ -206,7 +205,11 @@ public class RmModelTest : CellularAutomaton
     {
         float state = GetCell(x, y, z).State;
 
-        if (state > _liquidMass)
+        if (state == StatesNumbers["nonsoluble"])
+        {
+            return;
+        }
+        else if (state > _liquidMass)
         {
             Dilute(x, y, z);
         }
@@ -228,7 +231,6 @@ public class RmModelTest : CellularAutomaton
         _outputParameters.FieldAG[_x, _y, _z].State = StatesNumbers["movable"];
     }
 
-    // Вспомогательный метод для поиска и трансформации случайного соседа
     private void TransformRandomSolutionNeighborToCluster()
     {
         foreach (var n in _neighbors)
@@ -259,7 +261,7 @@ public class RmModelTest : CellularAutomaton
 
     private void CreateBone()
     {
-        var movableCell = GetCell(_x, _y, _z).State;
+        //var movableCell = GetCell(_x, _y, _z).State;
 
         var checkPos = new VectorInt(0, 0, 0);
         foreach (var n in _neighbors)
@@ -309,36 +311,36 @@ public class RmModelTest : CellularAutomaton
 
     public override void Update()
     {
-        if (_totalPorosity < _porosity)
+        if (_totalPorosity < _porosity || _porosity != 0)
         {
             CreateBone();
         }
-        //else
-        //{
-        //    if (_outputParameters.IsFinished)
-        //    {
-        //        (_outputParameters as RmModelView).IsEnd = true;
-        //        return;
-        //    }
+        else
+        {
+            if (_outputParameters.IsFinished)
+            {
+                (_outputParameters as RmModelView).IsEnd = true;
+                return;
+            }
 
-        //    _bufferField = new float[_inputParameters.Size.X,
-        //            _inputParameters.Size.Y, _inputParameters.Size.Z];
+            _bufferField = new float[_inputParameters.Size.X,
+                    _inputParameters.Size.Y, _inputParameters.Size.Z];
 
-        //    _solidCells = 0;
+            _solidCells = 0;
 
-        //    ProcessField(ChoiceMethod);
+            ProcessField(ChoiceMethod);
 
-        //    ProcessField((x, y, z) =>
-        //    {
-        //        GetCell(x, y, z).State += _bufferField[x, y, z];
-        //    });
+            ProcessField((x, y, z) =>
+            {
+                GetCell(x, y, z).State += _bufferField[x, y, z];
+            });
 
-        //    (_outputParameters as RmModelView)._iterMass[_outputParameters.Iteration] = _releasedMass;
+            (_outputParameters as RmModelView)._iterMass[_outputParameters.Iteration] = _releasedMass;
 
-        //    (_outputParameters as RmModelView).SolidCells = _solidCells;
+            (_outputParameters as RmModelView).SolidCells = _solidCells;
 
-        //    _releasedMass = 0;
-        //}
+            _releasedMass = 0;
+        }
 
         base.Update();
     }
