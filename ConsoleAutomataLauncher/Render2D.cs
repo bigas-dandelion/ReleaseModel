@@ -50,8 +50,23 @@ public class Render2D
         {
             for (int x = 0; x < FieldAG.GetLength((int)VectorInt.Dimension.X); x++)
             {
-                var c = CalculateColor(FieldAG[x, y, 0].State);
+                var state = FieldAG[x, y, 0].State;
 
+                Color c = Color.Red;
+
+                if (state == -1)
+                {
+                    c = Color.Purple;
+                }
+                else if (state == -2)
+                {
+                    c = Color.Brown;
+                }
+                else
+                {
+                    c = CalculateColor(state);
+                }
+                
                 Raylib.DrawRectangle(x * Scale, y * Scale, Scale, Scale, c);
             }
         }

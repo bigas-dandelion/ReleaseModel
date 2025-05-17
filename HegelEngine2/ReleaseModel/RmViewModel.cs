@@ -4,6 +4,26 @@ public class RmViewModel : ViewModel
 {
     public float SaturatedConc { get; set; }
 
+    private float _reactionProbability;
+    public float ReactionProbability
+    {
+        get
+        {
+            return _reactionProbability;
+        }
+        set
+        {
+            if (value < 0)
+                _reactionProbability = 0;
+            else if (value > 1)
+                _reactionProbability = 1;
+            else
+                _reactionProbability = value;
+        }
+    }
+
+    public int Porosity { get; set; }
+
     public float D { get; set; }
 
     public float K { get; set; }
