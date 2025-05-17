@@ -228,7 +228,6 @@ public class RmModelTest : CellularAutomaton
         _outputParameters.FieldAG[_x, _y, _z].State = StatesNumbers["movable"];
     }
 
-    // Вспомогательный метод для поиска и трансформации случайного соседа
     private void TransformRandomSolutionNeighborToCluster()
     {
         foreach (var n in _neighbors)
