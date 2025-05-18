@@ -92,9 +92,17 @@ public class RmModelTest : CellularAutomaton
         {
             var distanceSq = ((x - center.X) * (x - center.X)) +
                              ((y - center.Y) * (y - center.Y));
-            _outputParameters.FieldAG[x, y, z].State =
-                distanceSq <= radius * radius ? weight : StatesNumbers["solution"];
+
+            var state = distanceSq <= radius * radius ? weight : StatesNumbers["solution"];
+            _outputParameters.FieldAG[x, y, z].State = state;
+
+            if (state == weight)
+            {
+                _solidCells++;
+            }
         });
+
+        (_outputParameters as RmModelView).SolidCells = _solidCells;
     }
 
     private void CreateBoneConfig()
@@ -190,13 +198,17 @@ public class RmModelTest : CellularAutomaton
         {
             checkPos = new VectorInt(x + n.X, y + n.Y, z + n.Z);
 
-            ProcessBorder(checkPos.X, checkPos.Y, checkPos.Z, out float nextState);
-
-            if (nextState < _liquidMass && nextState != StatesNumbers["nonsoluble"])
+            if (checkPos.X >= 0 && checkPos.X < _size &&
+                    checkPos.Y >= 0 && checkPos.Y < _size)
             {
-                float diffMass = _k * (_liquidMass - nextState);
-                _bufferField[x, y, z] -= diffMass;
-                _bufferField[checkPos.X, checkPos.Y, checkPos.Z] += diffMass;
+                ProcessBorder(checkPos.X, checkPos.Y, checkPos.Z, out float nextState);
+
+                if (nextState < _liquidMass && nextState != StatesNumbers["nonsoluble"])
+                {
+                    float diffMass = _k * (_liquidMass - nextState);
+                    _bufferField[x, y, z] -= diffMass;
+                    _bufferField[checkPos.X, checkPos.Y, checkPos.Z] += diffMass;
+                }
             }
         }
     }
@@ -255,14 +267,16 @@ public class RmModelTest : CellularAutomaton
 
             GetCell(el).State = _inputParams.SolidMass;
 
+            _solidCells++;
+
             takenPositions.Clear();
         }
+
+        (_outputParameters as RmModelView).SolidCells = _solidCells;
     }
 
     private void CreateBone()
     {
-        //var movableCell = GetCell(_x, _y, _z).State;
-
         var checkPos = new VectorInt(0, 0, 0);
         foreach (var n in _neighbors)
         {
@@ -289,7 +303,11 @@ public class RmModelTest : CellularAutomaton
                         TransformRandomSolutionNeighborToCluster();
                     }
 
-                    CreateMovableCell();
+                    if (_totalPorosity < _porosity)
+                    {
+                        CreateMovableCell();
+                    }
+
                     return;
                 }
             }
@@ -311,13 +329,13 @@ public class RmModelTest : CellularAutomaton
 
     public override void Update()
     {
-        if (_totalPorosity < _porosity || _porosity != 0)
+        if (_porosity > 0 && _totalPorosity < _porosity)
         {
             CreateBone();
         }
         else
         {
-            if (_outputParameters.IsFinished)
+            if (IsFinished()) //_outputParameters.IsFinished
             {
                 (_outputParameters as RmModelView).IsEnd = true;
                 return;
