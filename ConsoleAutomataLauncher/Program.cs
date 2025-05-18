@@ -16,7 +16,6 @@ internal class Program
 
         ViewModel vm = new RmViewModel();
         vm.BoundaryConditions = CellularAutomaton.BoundaryConditions.Bounce;
-        (vm as RmViewModel).Iterations = 100;
         (vm as RmViewModel).Name = ViewModel.AutomataName.ReleaseModel;
         (vm as RmViewModel).Size = (30, 30, 1);
 
@@ -27,7 +26,7 @@ internal class Program
         (vm as RmViewModel).dx = 0.1f;
         (vm as RmViewModel).dt = 0.1f;
         (vm as RmViewModel).D = 0.001f;
-        (vm as RmViewModel).K = 0.0001f;
+        (vm as RmViewModel).K = 0.01f;
 
         (vm as RmViewModel).Porosity = 2;
         (vm as RmViewModel).ReactionProbability = 0.12f;
