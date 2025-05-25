@@ -4,6 +4,8 @@ public class RmViewModel : ViewModel
 {
     public float SaturatedConc { get; set; }
 
+    public string FileName { get; set; }
+
     private float _reactionProbability;
     public float ReactionProbability
     {
@@ -22,7 +24,7 @@ public class RmViewModel : ViewModel
         }
     }
 
-    public int Porosity { get; set; }
+    public bool IsTherePorosity { get; set; }
 
     public float D { get; set; }
 
