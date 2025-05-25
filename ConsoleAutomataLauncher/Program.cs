@@ -15,7 +15,7 @@ internal class Program
     {
         bool isTherePorosity = true;
 
-        string file = "try3";
+        string fileName = "try3";
 
         CellularAutomaton relModel;
         ModelView mv;
@@ -33,7 +33,7 @@ internal class Program
                 Diameter = 32f,
                 Porosity = 45,
                 ReactionProbability = 0.12f,
-                FileName = file
+                FileName = fileName
             };
 
             vm = dlaVm;
@@ -51,7 +51,7 @@ internal class Program
         {
             BoundaryConditions = CellularAutomaton.BoundaryConditions.Bounce,
             Name = ViewModel.AutomataName.ReleaseModel,
-            FileName = file,
+            FileName = fileName,
             Size = (150, 150, 1),
             Diameter = 21f,
             SolidMass = 23f,
