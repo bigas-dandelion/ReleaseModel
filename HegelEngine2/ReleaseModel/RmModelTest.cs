@@ -1,16 +1,12 @@
 ﻿using HegelEngine2.CellularAutomatonClass;
 using HegelEngine2.ParametersClasses;
 using HegelEngine2.Utils;
-using System.Drawing;
-using static IronPython.Modules._ast;
 
 namespace HegelEngine2.ReleaseModel;
 
 public class RmModelTest : CellularAutomaton
 {
     private float[,,] _bufferField;
-
-    private Random _random = new Random();
 
     private float _solidCells = 0;
     private float _releasedMass = 0;
@@ -22,23 +18,17 @@ public class RmModelTest : CellularAutomaton
     private readonly float _cSatur;
     private readonly float _dt;
     private readonly float _dx;
-    private readonly int _porosity;
-    private readonly float _reactProb;
+    private readonly bool _porosity;
     private Action _initialConfigurationAction { get; }
 
     private float M_max;
-    private int _totalPorosity = 0;
 
     private RmViewModel _inputParams;
-
-    private int _x = 0, _y = 0, _z = 0;
 
     private List<(VectorInt pos, float potentialDiff)> searchingCandidates
                 = new List<(VectorInt pos, float potentialDiff)>();
 
-    private List<VectorInt> clusterPositions = new List<VectorInt>();
-
-    private List<VectorInt> takenPositions = new List<VectorInt>();
+    private string directoryPath = "tests";
 
     public RmModelTest(ModelView output, ViewModel input) : base(output, input)
     {
@@ -50,14 +40,14 @@ public class RmModelTest : CellularAutomaton
 
         _size = _inputParams.Size.X;
 
-        _porosity = _inputParams.Porosity;
-
-        if (_porosity != 0)
+        if (_inputParams.IsTherePorosity)
         {
-            _initialConfigurationAction = () => CreateBoneConfig();
+            _initialConfigurationAction = () => Calc();
+            _inputParameters.InputField = LoadFile(_inputParams.FileName);
         }
-        else 
+        else
         {
+            InitInputField();
             _initialConfigurationAction = () => CreateTablet();
         }
 
@@ -66,7 +56,17 @@ public class RmModelTest : CellularAutomaton
         _k = _inputParams.K;
         _dt = _inputParams.dt;
         _dx = _inputParams.dx;
-        _reactProb = _inputParams.ReactionProbability;
+    }
+
+    private void InitInputField()
+    {
+        _inputParameters.InputField = new float[_inputParams.Size.X, 
+                                    _inputParams.Size.Y, _inputParams.Size.Z];
+
+        ProcessInputField((x, y, z) => 
+        {
+            _inputParameters.InputField[x, y, z] = StatesNumbers["solution"];
+        });
     }
 
     private void Calc()
@@ -88,13 +88,13 @@ public class RmModelTest : CellularAutomaton
         var radius = _inputParams.Diameter / 2;
         var weight = _inputParams.SolidMass;
 
-        ProcessField((x, y, z) =>
+        ProcessInputField((x, y, z) => 
         {
             var distanceSq = ((x - center.X) * (x - center.X)) +
-                             ((y - center.Y) * (y - center.Y));
+                            ((y - center.Y) * (y - center.Y));
 
             var state = distanceSq <= radius * radius ? weight : StatesNumbers["solution"];
-            _outputParameters.FieldAG[x, y, z].State = state;
+            _inputParameters.InputField[x, y, z] = state;
 
             if (state == weight)
             {
@@ -105,23 +105,33 @@ public class RmModelTest : CellularAutomaton
         (_outputParameters as RmModelView).SolidCells = _solidCells;
     }
 
-    private void CreateBoneConfig()
+    private float[,,] LoadFile(string fileName)
     {
-        Calc();
+        string fullPath = Path.Combine(directoryPath, fileName);
 
-        var size = _inputParams.Size.X;
-        var c = new VectorInt(size / 2, size / 2, 0);
-        var weight = _inputParams.SolidMass;
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"Файл не найден: {fullPath}");
 
-        clusterPositions.Add(c);
+        var lines = File.ReadAllLines(fullPath);
 
-        ProcessField((x, y, z) =>
+        float[,,] field = new float[_inputParams.Size.X, _inputParams.Size.Y, _inputParams.Size.Z];
+
+        for (int i = 0; i < lines.Length - 1; i++)
         {
-            _outputParameters.FieldAG[x, y, z].State = (x == c.X && y == c.Y && z == c.Z)
-                ? StatesNumbers["nonsoluble"] : StatesNumbers["solution"];
-        });
+            var parts = lines[i].Split('\t');
+            int x = int.Parse(parts[0]);
+            int y = int.Parse(parts[1]);
+            int z = int.Parse(parts[2]);
+            float state = float.Parse(parts[3]);
 
-        CreateMovableCell();
+            field[x, y, z] = state;
+        }
+
+        _solidCells = int.Parse(lines[^1]);
+
+        (_outputParameters as RmModelView).SolidCells = _solidCells;
+
+        return field;
     }
 
     public override void CreateInitialConfiguration()
@@ -191,7 +201,7 @@ public class RmModelTest : CellularAutomaton
     {
         _solidCells++;
 
-        var curState = GetCell(x, y, z).State;
+        var curState = _inputParameters.InputField[x, y, z];
 
         var checkPos = new VectorInt(0, 0, 0);
         foreach (var n in _neighbors)
@@ -215,7 +225,7 @@ public class RmModelTest : CellularAutomaton
 
     public void ChoiceMethod(int x, int y, int z)
     {
-        float state = GetCell(x, y, z).State;
+        float state = _inputParameters.InputField[x, y, z];
 
         if (state == StatesNumbers["nonsoluble"])
         {
@@ -232,133 +242,45 @@ public class RmModelTest : CellularAutomaton
         }
     }
 
-    private void CreateMovableCell()
+    private void ProcessInputField(ProcessCell applyFunction)
     {
-        do
+        for (int z = 0; z < _inputParameters.InputField.GetLength((int)VectorInt.Dimension.Z); z++)
         {
-            _x = _random.Next(_size);
-            _y = _random.Next(_size);
-        } while (clusterPositions.Contains(new VectorInt(_x, _y, _z)));
-
-        _outputParameters.FieldAG[_x, _y, _z].State = StatesNumbers["movable"];
-    }
-
-    private void TransformRandomSolutionNeighborToCluster()
-    {
-        foreach (var n in _neighbors)
-        {
-            VectorInt checkPos = new VectorInt(_x + n.X, _y + n.Y, _z + n.Z);
-
-            if (checkPos.X >= 0 && checkPos.X < _size &&
-                checkPos.Y >= 0 && checkPos.Y < _size)
+            for (int y = 0; y < _inputParameters.InputField.GetLength((int)VectorInt.Dimension.Y); y++)
             {
-                ProcessBorder(checkPos.X, checkPos.Y, checkPos.Z, out float nextState);
-
-                if (nextState == StatesNumbers["solution"])
+                for (int x = 0; x < _inputParameters.InputField.GetLength((int)VectorInt.Dimension.X); x++)
                 {
-                    takenPositions.Add(checkPos);
+                    applyFunction(x, y, z);
                 }
             }
         }
-
-        if (takenPositions.Count > 0)
-        {
-            var el = takenPositions[_random.Next(takenPositions.Count)];
-
-            GetCell(el).State = _inputParams.SolidMass;
-
-            _solidCells++;
-
-            takenPositions.Clear();
-        }
-
-        (_outputParameters as RmModelView).SolidCells = _solidCells;
-    }
-
-    private void CreateBone()
-    {
-        var checkPos = new VectorInt(0, 0, 0);
-        foreach (var n in _neighbors)
-        {
-            checkPos = new VectorInt(_x + n.X, _y + n.Y, _z + n.Z);
-
-            if (checkPos.X >= 0 && checkPos.X < _size &&
-                checkPos.Y >= 0 && checkPos.Y < _size)
-            {
-                ProcessBorder(checkPos.X, checkPos.Y, checkPos.Z, out float nextState);
-
-                if (nextState == StatesNumbers["solution"])
-                {
-                    takenPositions.Add(checkPos);
-                }
-                else if (nextState == StatesNumbers["nonsoluble"])
-                {
-                    takenPositions.Clear();
-                    _totalPorosity++;
-                    GetCell(_x, _y, _z).State = StatesNumbers["nonsoluble"];
-                    clusterPositions.Add(new VectorInt(_x, _y, _z));
-
-                    if ((float) _random.NextDouble() >= _reactProb)
-                    {
-                        TransformRandomSolutionNeighborToCluster();
-                    }
-
-                    if (_totalPorosity < _porosity)
-                    {
-                        CreateMovableCell();
-                    }
-
-                    return;
-                }
-            }
-        }
-
-        if (takenPositions.Count > 0)
-        {
-            var el = takenPositions[_random.Next(takenPositions.Count)];
-
-            var neighState = GetCell(el.X, el.Y, el.Z).State;
-
-            GetCell(el.X, el.Y, el.Z).State = StatesNumbers["movable"];
-            GetCell(_x, _y, _z).State = StatesNumbers["solution"];
-            (_x, _y, _z) = (el.X, el.Y, el.Z);
-        }
-
-        takenPositions.Clear();
     }
 
     public override void Update()
     {
-        if (_porosity > 0 && _totalPorosity < _porosity)
+        if (IsFinished())
         {
-            CreateBone();
+            (_outputParameters as RmModelView).IsEnd = true;
+            return;
         }
-        else
+
+        _bufferField = new float[_inputParameters.Size.X,
+                _inputParameters.Size.Y, _inputParameters.Size.Z];
+
+        _solidCells = 0;
+
+        ProcessInputField(ChoiceMethod);
+
+        ProcessInputField((x, y, z) =>
         {
-            if (IsFinished()) //_outputParameters.IsFinished
-            {
-                (_outputParameters as RmModelView).IsEnd = true;
-                return;
-            }
+            _inputParameters.InputField[x, y, z] += _bufferField[x, y, z];
+        });
 
-            _bufferField = new float[_inputParameters.Size.X,
-                    _inputParameters.Size.Y, _inputParameters.Size.Z];
+        (_outputParameters as RmModelView)._iterMass[_outputParameters.Iteration] = _releasedMass;
 
-            _solidCells = 0;
+        (_outputParameters as RmModelView).SolidCells = _solidCells;
 
-            ProcessField(ChoiceMethod);
-
-            ProcessField((x, y, z) =>
-            {
-                GetCell(x, y, z).State += _bufferField[x, y, z];
-            });
-
-            (_outputParameters as RmModelView)._iterMass[_outputParameters.Iteration] = _releasedMass;
-
-            (_outputParameters as RmModelView).SolidCells = _solidCells;
-
-            _releasedMass = 0;
-        }
+        _releasedMass = 0;
 
         base.Update();
     }
