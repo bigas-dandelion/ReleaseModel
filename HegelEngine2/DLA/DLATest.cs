@@ -10,12 +10,15 @@ public class DLATest : CellularAutomaton
     private readonly int _porosity;
     private readonly float _reactProb;
     private readonly string _fileName;
+    private readonly int _boot;
 
     private int _totalPorosity;
 
     private Random _random = new Random();
 
     private int _x = 0, _y = 0, _z = 0;
+
+    private int _countRedCells = 0;
 
     private int _solidCells;
 
@@ -42,6 +45,7 @@ public class DLATest : CellularAutomaton
         _size = _inputParams.Size.X;
         _reactProb = _inputParams.ReactionProbability;
         _fileName = _inputParams.FileName;
+        _boot = _inputParams.BootParam;
     }
 
     public override void CreateInitialConfiguration()
@@ -200,6 +204,7 @@ public class DLATest : CellularAutomaton
                     if ((float)_random.NextDouble() >= _reactProb)
                     {
                         TransformRandomSolutionNeighborToCluster();
+                        _countRedCells++;
                     }
 
                     if (_totalPorosity < _porosity)
@@ -228,6 +233,6 @@ public class DLATest : CellularAutomaton
 
     public override bool IsFinished()
     {
-        return _porosity == _totalPorosity;
+        return _porosity == _totalPorosity && _boot == _countRedCells;
     }
 }
