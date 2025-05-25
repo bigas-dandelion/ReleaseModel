@@ -3,6 +3,7 @@ using HegelEngine2;
 using HegelEngine2.CellularAutomatonClass;
 using HegelEngine2.ParametersClasses;
 using HegelEngine2.ReleaseModel;
+using HegelEngine2.DLA;
 using Raylib_cs;
 using System.Text;
 
@@ -12,42 +13,75 @@ internal class Program
 {
     private static void Main()
     {
-        ModelView mv = new RmModelView();
+        bool isTherePorosity = true;
 
-        ViewModel vm = new RmViewModel();
-        vm.BoundaryConditions = CellularAutomaton.BoundaryConditions.Bounce;
-        (vm as RmViewModel).Name = ViewModel.AutomataName.ReleaseModel;
-        (vm as RmViewModel).Size = (30, 30, 1);
+        string file = "try3";
 
-        (vm as RmViewModel).Diameter = 32f;
-        (vm as RmViewModel).SolidMass = 23f;
+        CellularAutomaton relModel;
+        ModelView mv;
+        ViewModel vm;
 
-        (vm as RmViewModel).SaturatedConc = 32f;
-        (vm as RmViewModel).dx = 0.1f;
-        (vm as RmViewModel).dt = 0.1f;
-        (vm as RmViewModel).D = 0.001f;
-        (vm as RmViewModel).K = 0.01f;
+        if (isTherePorosity)
+        {
+            var dlaVm = new DLAViewModel
+            {
+                BoundaryConditions = CellularAutomaton.BoundaryConditions.Bounce,
+                Name = ViewModel.AutomataName.DLA,
+                Size = (150, 150, 1),
+                SolidMass = 23f,
+                BootParam = 55,
+                Diameter = 32f,
+                Porosity = 45,
+                ReactionProbability = 0.12f,
+                FileName = file
+            };
 
-        (vm as RmViewModel).Porosity = 2;
-        (vm as RmViewModel).ReactionProbability = 0.12f;
+            vm = dlaVm;
+            mv = new DLAModelView();
+            relModel = new DLATest(mv, vm);
+            relModel.InitializeAutomata();
 
-        CellularAutomaton relModel = new RmModelTest(mv, vm);
+            while (!(mv as DLAModelView).IsEnd)
+            {
+                relModel.Update();
+            }
+        }
+
+        var rmVm = new RmViewModel
+        {
+            BoundaryConditions = CellularAutomaton.BoundaryConditions.Bounce,
+            Name = ViewModel.AutomataName.ReleaseModel,
+            FileName = file,
+            Size = (150, 150, 1),
+            Diameter = 21f,
+            SolidMass = 23f,
+            SaturatedConc = 32f,
+            dx = 0.1f,
+            dt = 0.1f,
+            D = 0.001f,
+            K = 0.01f,
+            IsTherePorosity = isTherePorosity
+        };
+
+        vm = rmVm;
+        mv = new RmModelView();
+        relModel = new RmModelTest(mv, vm);
         relModel.InitializeAutomata();
 
-        Render2D render = new Render2D(mv.FieldAG, 6, vm);
+        var render = new Render2D(vm.InputField, 6, vm);
 
         while (!Raylib.WindowShouldClose())
         {
             if ((mv as RmModelView).IsEnd)
             {
                 Thread.Sleep(3000);
-                DataToExcel(mv);
+                //DataToExcel(mv);
                 Raylib.CloseWindow();
                 break;
             }
 
             relModel.Update();
-            render.Draw(mv.FieldAG, mv.Iteration);
+            render.DrawInputField(vm.InputField, mv.Iteration);
         }
     }
 
