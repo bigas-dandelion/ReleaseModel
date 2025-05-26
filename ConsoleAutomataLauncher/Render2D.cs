@@ -28,52 +28,6 @@ public class Render2D
         Raylib.SetTargetFPS(10);
     }
 
-    public Render2D(float[,,] FieldAG, int scale, ViewModel vm)
-    {
-        Scale = scale;
-        Width = FieldAG.GetLength((int)VectorInt.Dimension.X) * Scale;
-        Height = FieldAG.GetLength((int)VectorInt.Dimension.Y) * Scale;
-
-        SolidThreshold = (vm as RmViewModel).LiquidMass;
-
-        Raylib.InitWindow(Width, Height, "Test CARender2D");
-        Raylib.SetTargetFPS(10);
-    }
-
-    public void DrawInputField(float[,,] FieldAG, int iter)
-    {
-        Raylib.BeginDrawing();
-        Raylib.ClearBackground(Color.White);
-
-        for (int y = 0; y < FieldAG.GetLength((int)VectorInt.Dimension.Y); y++)
-        {
-            for (int x = 0; x < FieldAG.GetLength((int)VectorInt.Dimension.X); x++)
-            {
-                var state = FieldAG[x, y, 0];
-
-                Color c = Color.Red;
-
-                if (state == -1)
-                {
-                    c = Color.Purple;
-                }
-                else if (state == -2)
-                {
-                    c = Color.Brown;
-                }
-                else
-                {
-                    c = CalculateColor(state);
-                }
-
-                Raylib.DrawRectangle(x * Scale, y * Scale, Scale, Scale, c);
-            }
-        }
-
-        Raylib.DrawText($"FPS: {Raylib.GetFPS()}, Iteration: {iter}", 10, 10, 20, Color.Black);
-        Raylib.EndDrawing();
-    }
-
     public Color CalculateColor(float state)
     {
         if (state <= SolidThreshold)

@@ -16,12 +16,13 @@ public class RmModelTest : CellularAutomaton
     private readonly float _k;
     private float _D;
     private readonly float _cSatur;
+    private float M_max;
     private readonly float _dt;
     private readonly float _dx;
+
     private readonly bool _porosity;
     private Action _initialConfigurationAction { get; }
 
-    private float M_max;
 
     private RmViewModel _inputParams;
 
@@ -42,12 +43,12 @@ public class RmModelTest : CellularAutomaton
 
         if (_inputParams.IsTherePorosity)
         {
-            _initialConfigurationAction = () => Calc();
+            _initialConfigurationAction = Calc;
             _inputParameters.InputField = LoadFile(_inputParams.FileName);
         }
         else
         {
-            InitInputField();
+
             _initialConfigurationAction = () => CreateTablet();
         }
 
@@ -56,17 +57,6 @@ public class RmModelTest : CellularAutomaton
         _k = _inputParams.K;
         _dt = _inputParams.dt;
         _dx = _inputParams.dx;
-    }
-
-    private void InitInputField()
-    {
-        _inputParameters.InputField = new float[_inputParams.Size.X, 
-                                    _inputParams.Size.Y, _inputParams.Size.Z];
-
-        ProcessInputField((x, y, z) => 
-        {
-            _inputParameters.InputField[x, y, z] = StatesNumbers["solution"];
-        });
     }
 
     private void Calc()
@@ -88,13 +78,13 @@ public class RmModelTest : CellularAutomaton
         var radius = _inputParams.Diameter / 2;
         var weight = _inputParams.SolidMass;
 
-        ProcessInputField((x, y, z) => 
+        ProcessField((x, y, z) =>
         {
             var distanceSq = ((x - center.X) * (x - center.X)) +
                             ((y - center.Y) * (y - center.Y));
 
             var state = distanceSq <= radius * radius ? weight : StatesNumbers["solution"];
-            _inputParameters.InputField[x, y, z] = state;
+            GetCell(x, y, z).State = state;
 
             if (state == weight)
             {
@@ -201,7 +191,7 @@ public class RmModelTest : CellularAutomaton
     {
         _solidCells++;
 
-        var curState = _inputParameters.InputField[x, y, z];
+        var curState = GetCell(x, y, z).State;
 
         var checkPos = new VectorInt(0, 0, 0);
         foreach (var n in _neighbors)
@@ -225,7 +215,7 @@ public class RmModelTest : CellularAutomaton
 
     public void ChoiceMethod(int x, int y, int z)
     {
-        float state = _inputParameters.InputField[x, y, z];
+        float state = GetCell(x, y, z).State;
 
         if (state == StatesNumbers["nonsoluble"])
         {
@@ -242,20 +232,6 @@ public class RmModelTest : CellularAutomaton
         }
     }
 
-    private void ProcessInputField(ProcessCell applyFunction)
-    {
-        for (int z = 0; z < _inputParameters.InputField.GetLength((int)VectorInt.Dimension.Z); z++)
-        {
-            for (int y = 0; y < _inputParameters.InputField.GetLength((int)VectorInt.Dimension.Y); y++)
-            {
-                for (int x = 0; x < _inputParameters.InputField.GetLength((int)VectorInt.Dimension.X); x++)
-                {
-                    applyFunction(x, y, z);
-                }
-            }
-        }
-    }
-
     public override void Update()
     {
         if (IsFinished())
@@ -269,11 +245,11 @@ public class RmModelTest : CellularAutomaton
 
         _solidCells = 0;
 
-        ProcessInputField(ChoiceMethod);
+        ProcessField(ChoiceMethod);
 
-        ProcessInputField((x, y, z) =>
+        ProcessField((x, y, z) =>
         {
-            _inputParameters.InputField[x, y, z] += _bufferField[x, y, z];
+            GetCell(x, y, z).State += _bufferField[x, y, z];
         });
 
         (_outputParameters as RmModelView)._iterMass[_outputParameters.Iteration] = _releasedMass;

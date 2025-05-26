@@ -147,7 +147,7 @@ public class DLATest : CellularAutomaton
         var radius = _inputParams.Diameter / 2;
         var weight = _inputParams.SolidMass;
 
-        ProcessField((x, y, z) => 
+        ProcessField((x, y, z) =>
         {
             var distanceSq = ((x - center.X) * (x - center.X)) +
                  ((y - center.Y) * (y - center.Y));
@@ -233,6 +233,6 @@ public class DLATest : CellularAutomaton
 
     public override bool IsFinished()
     {
-        return _porosity == _totalPorosity && _boot == _countRedCells;
+        return _porosity <= _totalPorosity && _boot <= _countRedCells;
     }
 }

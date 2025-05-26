@@ -13,7 +13,7 @@ internal class Program
 {
     private static void Main()
     {
-        bool isTherePorosity = true;
+        bool isTherePorosity = false;
 
         string fileName = "try3";
 
@@ -68,7 +68,7 @@ internal class Program
         relModel = new RmModelTest(mv, vm);
         relModel.InitializeAutomata();
 
-        var render = new Render2D(vm.InputField, 6, vm);
+        var render = new Render2D(mv.FieldAG, 6, vm);
 
         while (!Raylib.WindowShouldClose())
         {
@@ -81,7 +81,7 @@ internal class Program
             }
 
             relModel.Update();
-            render.DrawInputField(vm.InputField, mv.Iteration);
+            render.Draw(mv.FieldAG, mv.Iteration);
         }
     }
 
