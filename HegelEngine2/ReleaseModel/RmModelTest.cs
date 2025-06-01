@@ -1,6 +1,7 @@
 ﻿using HegelEngine2.CellularAutomatonClass;
 using HegelEngine2.ParametersClasses;
 using HegelEngine2.Utils;
+using Mono.Unix.Native;
 
 namespace HegelEngine2.ReleaseModel;
 
@@ -15,12 +16,13 @@ public class RmModelTest : CellularAutomaton
 
     private readonly float _k;
     private float _D;
+    private float _D2;
     private readonly float _cSatur;
     private float M_max;
     private readonly float _dt;
     private readonly float _dx;
 
-    private readonly bool _porosity;
+    private readonly int _membraneWidth;
     private Action _initialConfigurationAction { get; }
 
 
@@ -48,8 +50,9 @@ public class RmModelTest : CellularAutomaton
         }
         else
         {
-
-            _initialConfigurationAction = () => CreateTablet();
+            _initialConfigurationAction = CreateTablet;
+            _membraneWidth = _inputParams.MembraneWidth;
+            _D2 = _inputParams.D2;
         }
 
         _cSatur = _inputParams.SaturatedConc;
@@ -78,6 +81,8 @@ public class RmModelTest : CellularAutomaton
         var radius = _inputParams.Diameter / 2;
         var weight = _inputParams.SolidMass;
 
+        _D2 =  _D2 * _dt / (_dx * _dx);
+
         ProcessField((x, y, z) =>
         {
             var distanceSq = ((x - center.X) * (x - center.X)) +
@@ -93,6 +98,33 @@ public class RmModelTest : CellularAutomaton
         });
 
         (_outputParameters as RmModelView).SolidCells = _solidCells;
+
+        int membYCoor = center.Y + (int)Math.Round(radius) + 1;
+        int maxY = _inputParams.Size.Y;
+
+        int remainingHeight = maxY - membYCoor;
+
+        int membraneHeight = _membraneWidth;
+
+        if (membraneHeight > remainingHeight)
+        {
+            membraneHeight = remainingHeight;
+        }
+
+        int endY = membYCoor + membraneHeight;
+
+        for (int z = 0; z < _outputParameters.FieldAG.GetLength((int)VectorInt.Dimension.Z); z++)
+        {
+            for (int y = membYCoor; y < endY; y++)
+            {
+                for (int x = 0; x < _outputParameters.FieldAG.GetLength((int)VectorInt.Dimension.X); x++)
+                {
+                    _outputParameters.FieldAG[x, y, z].State = StatesNumbers["solution"];
+                    //(_outputParameters as RmModelView).clusterPositions.Add(new VectorInt(x, y, z));
+                    (_outputParameters as RmModelView).ClusterCoords3d.Add((x, y, z));
+                }
+            }
+        }
     }
 
     private float[,,] LoadFile(string fileName)
@@ -129,6 +161,8 @@ public class RmModelTest : CellularAutomaton
         _initialConfigurationAction?.Invoke();
     }
 
+    private float koeff;
+
     public void Diffuse(int x, int y, int z)
     {
         float currentMass = GetCell(x, y, z).State;
@@ -145,11 +179,18 @@ public class RmModelTest : CellularAutomaton
             var checkPos = new VectorInt(x + n.X, y + n.Y, z + n.Z);
             ProcessBorder(checkPos.X, checkPos.Y, checkPos.Z, out float nextMass);
 
+            koeff = (_outputParameters as RmModelView).ClusterCoords3d.
+                                            Contains((checkPos.X, checkPos.Y, checkPos.Z))? _D2 : _D;
+
+            //koeff = (_outputParameters as RmModelView).clusterPositions.
+            //                                      Any(v => v.X == checkPos.X && v.Y == checkPos.Y) 
+            //                                                                    ? _D2 : _D;
+
             if (nextMass != StatesNumbers["border"] &&
                 nextMass <= _liquidMass &&
                 currentMass > nextMass && nextMass != StatesNumbers["nonsoluble"])
             {
-                float diff = _D * (tmpMass - nextMass);
+                float diff = koeff * (tmpMass - nextMass); //_D
 
                 tmpMass -= diff;
 

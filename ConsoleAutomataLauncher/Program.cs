@@ -63,12 +63,18 @@ internal class Program
             IsTherePorosity = isTherePorosity
         };
 
+        if (!isTherePorosity)
+        {
+            rmVm.MembraneWidth = 12;
+            rmVm.D2 = 0.001f;
+        }
+
         vm = rmVm;
         mv = new RmModelView();
         relModel = new RmModelTest(mv, vm);
         relModel.InitializeAutomata();
 
-        var render = new Render2D(mv.FieldAG, 6, vm);
+        var render = new Render2D(mv.FieldAG, 6, vm, mv);
 
         while (!Raylib.WindowShouldClose())
         {

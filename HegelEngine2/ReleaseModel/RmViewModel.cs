@@ -6,6 +6,8 @@ public class RmViewModel : ViewModel
 
     public string FileName { get; set; }
 
+    public int MembraneWidth { get; set; }
+
     private float _reactionProbability;
     public float ReactionProbability
     {
@@ -25,8 +27,9 @@ public class RmViewModel : ViewModel
     }
 
     public bool IsTherePorosity { get; set; }
-
     public float D { get; set; }
+
+    public float D2 { get; set; }
 
     public float K { get; set; }
 
